@@ -1,28 +1,33 @@
-<?php
+﻿<?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TrashController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::post('login', [AuthController::class, 'login']);
+Route::post('register', [AuthController::class, 'register']);
+
 // API Routes >> make the routes grouping into v1
-Route::get('/trash', [TrashController::class, 'index']);
-Route::get('/reports', [ReportController::class, 'index']);
-Route::get('/reports/{id}', [ReportController::class, 'show']);
-Route::get('/trash/{id}', [TrashController::class, 'show']);
-Route::post('/trash', [TrashController::class, 'create']);
-Route::get('/trash', [TrashController::class, 'index']);
-Route::put('/trash/{id}', [TrashController::class, 'update']);
-Route::delete('/trash/{id}', [TrashController::class, 'destroy']);
-Route::post('/reports', [ReportController::class, 'create']);
-Route::put('/reports/{id}', [ReportController::class, 'update']);
-Route::delete('/reports/{id}', [ReportController::class, 'destroy']);
-Route::put('/reports/{id}/status', [ReportController::class, 'updateStatus']);
-Route::get('/reports/search', [ReportController::class, 'search']);
-Route::get('/reports/filter', [ReportController::class, 'filterByStatus']);
-Route::get('/reports/sort', [ReportController::class, 'sortByDate']);
-Route::get('/reports/paginate', [ReportController::class, 'paginate']);
+Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::get('profile', [AuthController::class, 'profile']);
+
+    Route::get('trash', [TrashController::class, 'index']);
+    Route::get('trash/{id}', [TrashController::class, 'show']);
+    Route::post('trash', [TrashController::class, 'create']);
+
+    Route::get('reports', [ReportController::class, 'index']);
+    Route::get('reports/{id}', [ReportController::class, 'show']);
+    Route::post('reports', [ReportController::class, 'create']);
+    Route::put('reports/{id}', [ReportController::class, 'updateReport']);
+    Route::put('reports/{id}/status', [ReportController::class, 'updateStatus']);
+    Route::delete('reports/{id}', [ReportController::class, 'destroy']);
+    Route::post('reports/search', [ReportController::class, 'search']);
+    Route::post('reports/filter', [ReportController::class, 'filterByStatus']);
+})->middleware('auth:api'); // Proteksi route
