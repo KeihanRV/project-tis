@@ -14,7 +14,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 
 // API Routes >> make the routes grouping into v1
-Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
+Route::group(['middleware' => ['api', 'auth:api'], 'prefix' => 'v1'], function ($router) {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('profile', [AuthController::class, 'profile']);
 
@@ -30,4 +30,4 @@ Route::group(['middleware' => 'api', 'prefix' => 'v1'], function ($router) {
     Route::delete('reports/{id}', [ReportController::class, 'destroy']);
     Route::post('reports/search', [ReportController::class, 'search']);
     Route::post('reports/filter', [ReportController::class, 'filterByStatus']);
-})->middleware('auth:api'); // Proteksi route
+}); // Proteksi route

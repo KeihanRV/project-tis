@@ -35,7 +35,7 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (! $token = auth()->attempt($credentials)) {
+        if (! $token = auth('api')->attempt($credentials)) {
             return response()->json([
                 'message' => 'Invalid email or password',
             ], 401);
@@ -44,13 +44,13 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login successful',
             'token' => $token,
-            'user' => auth()->user(),
+            'user' => auth('api')->user(),
         ]);
     }
 
     public function logout()
     {
-        auth()->logout();
+        auth('api')->logout();
 
         return response()->json([
             'message' => 'User logged out successfully',
@@ -60,7 +60,7 @@ class AuthController extends Controller
     public function profile()
     {
         return response()->json([
-            'user' => auth()->user(),
+            'user' => auth('api')->user(),
         ]);
     }
 }

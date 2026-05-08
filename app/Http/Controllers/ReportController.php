@@ -63,7 +63,7 @@ class ReportController extends Controller
             'status' => 'sometimes|in:pending,in_progress,completed,rejected',
         ]);
 
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = auth('api')->id();
         $validated['status'] = $validated['status'] ?? 'pending';
 
         $report = Report::create($validated);
