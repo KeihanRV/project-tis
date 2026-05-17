@@ -71,7 +71,7 @@ class TrashTrackApiTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')->getJson('/api/v1/profile');
+        $response = $this->actingWithToken($user)->getJson('/api/v1/profile');
 
         $response->assertOk()
             ->assertJsonStructure(['user' => ['id', 'name', 'email']])
@@ -112,7 +112,7 @@ class TrashTrackApiTest extends TestCase
         $user = User::factory()->create();
         Trash::factory()->count(2)->create();
 
-        $listResponse = $this->actingAs($user, 'api')->getJson('/api/v1/trash');
+        $listResponse = $this->actingWithToken($user)->getJson('/api/v1/trash');
 
         $listResponse->assertOk()
             ->assertJsonCount(2)
@@ -126,7 +126,7 @@ class TrashTrackApiTest extends TestCase
             'weight' => 2.5,
         ];
 
-        $createResponse = $this->actingAs($user, 'api')->postJson('/api/v1/trash', $payload);
+        $createResponse = $this->actingWithToken($user)->postJson('/api/v1/trash', $payload);
 
         $createResponse->assertCreated()
             ->assertJsonPath('name', 'Plastic Bottle')
@@ -139,11 +139,54 @@ class TrashTrackApiTest extends TestCase
         ]);
     }
 
+    public function test_v1_trash_create_validation_errors_are_returned(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingWithToken($user)->postJson('/api/v1/trash', [
+            'name' => '',
+            'category' => '',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'category', 'weight']);
+    }
+
+    public function test_v1_reports_paginated_and_trash_names_endpoints_work(): void
+    {
+        $user = User::factory()->create();
+        Trash::factory()->count(3)->create();
+
+        $report = Report::factory()->withTrash()->create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+        ]);
+
+        $paginationResponse = $this->actingWithToken($user)->getJson('/api/v1/reports/paginated?per_page=1');
+
+        if (! $paginationResponse->isOk()) {
+            file_put_contents(storage_path('logs/test_debug_v1_pagination.txt'), $paginationResponse->getContent());
+        }
+
+        $paginationResponse->assertOk()
+            ->assertJsonStructure([
+                'data',
+                'pagination' => ['total', 'per_page', 'current_page', 'last_page', 'from', 'to'],
+            ])
+            ->assertJsonCount(1, 'data');
+
+        $trashResponse = $this->actingWithToken($user)->getJson("/api/v1/reports/{$report->id}/trash");
+
+        $trashResponse->assertOk()
+            ->assertJsonPath('report_id', $report->id)
+            ->assertJsonStructure(['report_id', 'trash']);
+    }
+
     public function test_authenticated_user_can_perform_report_crud_search_and_filter(): void
     {
         $user = User::factory()->create();
 
-        $createResponse = $this->actingAs($user, 'api')->postJson('/api/v1/reports', [
+        $createResponse = $this->actingWithToken($user)->postJson('/api/v1/reports', [
             'title' => 'Illegal dumping near park',
             'description' => 'A pile of waste is left near the community park.',
             'status' => 'pending',
@@ -155,29 +198,29 @@ class TrashTrackApiTest extends TestCase
 
         $reportId = $createResponse->json('report.id');
 
-        $indexResponse = $this->actingAs($user, 'api')->getJson('/api/v1/reports');
+        $indexResponse = $this->actingWithToken($user)->getJson('/api/v1/reports');
 
         $indexResponse->assertOk()
             ->assertJsonStructure([['id', 'user_id', 'title', 'description', 'status', 'created_at', 'updated_at']]);
 
-        $showResponse = $this->actingAs($user, 'api')->getJson("/api/v1/reports/{$reportId}");
+        $showResponse = $this->actingWithToken($user)->getJson("/api/v1/reports/{$reportId}");
 
         $showResponse->assertOk()
             ->assertJsonPath('id', $reportId)
             ->assertJsonPath('title', 'Illegal dumping near park');
 
-        $this->actingAs($user, 'api')->putJson("/api/v1/reports/{$reportId}", [
+        $this->actingWithToken($user)->putJson("/api/v1/reports/{$reportId}", [
             'title' => 'Illegal dumping fixed',
             'description' => 'Update report description after cleanup.',
         ])->assertOk()
             ->assertJsonPath('message', 'Report updated successfully');
 
-        $this->actingAs($user, 'api')->putJson("/api/v1/reports/{$reportId}/status", [
+        $this->actingWithToken($user)->putJson("/api/v1/reports/{$reportId}/status", [
             'status' => 'in_progress',
         ])->assertOk()
             ->assertJsonPath('message', 'Report status updated successfully');
 
-        $searchResponse = $this->actingAs($user, 'api')->postJson('/api/v1/reports/search', [
+        $searchResponse = $this->actingWithToken($user)->postJson('/api/v1/reports/search', [
             'query' => 'dumping',
         ]);
 
@@ -185,7 +228,7 @@ class TrashTrackApiTest extends TestCase
             ->assertJsonCount(1, 'results')
             ->assertJsonPath('results.0.id', $reportId);
 
-        $filterResponse = $this->actingAs($user, 'api')->postJson('/api/v1/reports/filter', [
+        $filterResponse = $this->actingWithToken($user)->postJson('/api/v1/reports/filter', [
             'status' => 'in_progress',
         ]);
 
@@ -193,7 +236,7 @@ class TrashTrackApiTest extends TestCase
             ->assertJsonCount(1, 'reports')
             ->assertJsonPath('reports.0.id', $reportId);
 
-        $this->actingAs($user, 'api')->deleteJson("/api/v1/reports/{$reportId}")
+        $this->actingWithToken($user)->deleteJson("/api/v1/reports/{$reportId}")
             ->assertOk()
             ->assertJsonPath('message', 'Report deleted successfully');
     }
@@ -203,21 +246,21 @@ class TrashTrackApiTest extends TestCase
         $user = User::factory()->create();
         $missingId = 9999;
 
-        $this->actingAs($user, 'api')->getJson("/api/v1/reports/{$missingId}")
+        $this->actingWithToken($user)->getJson("/api/v1/reports/{$missingId}")
             ->assertNotFound()
             ->assertJsonPath('message', 'Report not found');
 
-        $this->actingAs($user, 'api')->putJson("/api/v1/reports/{$missingId}", [
+        $this->actingWithToken($user)->putJson("/api/v1/reports/{$missingId}", [
             'title' => 'No report',
         ])->assertNotFound()
             ->assertJsonPath('message', 'Report not found');
 
-        $this->actingAs($user, 'api')->putJson("/api/v1/reports/{$missingId}/status", [
+        $this->actingWithToken($user)->putJson("/api/v1/reports/{$missingId}/status", [
             'status' => 'completed',
         ])->assertNotFound()
             ->assertJsonPath('message', 'Report not found');
 
-        $this->actingAs($user, 'api')->deleteJson("/api/v1/reports/{$missingId}")
+        $this->actingWithToken($user)->deleteJson("/api/v1/reports/{$missingId}")
             ->assertNotFound()
             ->assertJsonPath('message', 'Report not found');
     }

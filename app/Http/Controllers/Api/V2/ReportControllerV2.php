@@ -1,51 +1,64 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\V2;
 
+use App\Http\Controllers\Controller;
 use App\Models\Report;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
-class ReportController extends Controller
+class ReportControllerV2 extends Controller
 {
+    private function simplifyReport(Report $report): array
+    {
+        return [
+            'id' => $report->id,
+            'status' => $report->status,
+            'title' => $report->title,
+            'reported_at' => $report->created_at?->toDateTimeString(),
+            'reporter_name' => $report->user?->name,
+            'description' => $report->description,
+            'trash_names' => $report->trash->pluck('name')->all(),
+            'image' => $report->image_path,
+        ];
+    }
+
     #[OA\Get(
-        path: '/api/v1/reports',
-        summary: 'Dapatkan daftar laporan',
-        description: 'Mengambil seluruh laporan dengan informasi pengguna pembuat laporan',
-        tags: ['Reports'],
+        path: '/api/v2/reports',
+        summary: 'Dapatkan daftar laporan ringkas',
+        description: 'Mengambil laporan dengan data yang disederhanakan untuk tampilan cepat',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Daftar laporan berhasil diambil',
                 content: new OA\JsonContent(
-                    type: 'array',
-                    items: new OA\Items(ref: '#/components/schemas/Report')
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items),
+                    ]
                 )
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
         ]
     )]
     public function index()
     {
-        $reports = Report::with('user')->get();
+        $reports = Report::with('user', 'trash')->get();
 
-        return response()->json($reports);
+        return response()->json([
+            'data' => $reports->map(fn (Report $report) => $this->simplifyReport($report)),
+        ]);
     }
 
     #[OA\Get(
-        path: '/api/v1/reports/{id}',
-        summary: 'Dapatkan detail laporan',
-        description: 'Mengambil detail laporan berdasarkan ID',
-        tags: ['Reports'],
+        path: '/api/v2/reports/{id}',
+        summary: 'Dapatkan detail laporan ringkas',
+        description: 'Mengambil detail laporan dengan data yang disederhanakan',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
@@ -64,40 +77,30 @@ class ReportController extends Controller
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
             new OA\Response(
                 response: 404,
-                description: 'Laporan tidak ditemukan',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Report not found'),
-                    ]
-                )
+                description: 'Laporan tidak ditemukan'
             ),
         ]
     )]
     public function show($id)
     {
-        $report = Report::with('user')->find($id);
+        $report = Report::with('user', 'trash')->find($id);
 
         if (! $report) {
             return response()->json(['message' => 'Report not found'], 404);
         }
 
-        return response()->json($report);
+        return response()->json(['data' => $this->simplifyReport($report)]);
     }
 
     #[OA\Post(
-        path: '/api/v1/reports',
-        summary: 'Buat laporan baru',
-        description: 'Membuat laporan baru tentang insiden sampah',
-        tags: ['Reports'],
+        path: '/api/v2/reports',
+        summary: 'Buat laporan baru (ringkas)',
+        description: 'Membuat laporan baru dan mengembalikan ringkasan data laporan',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
@@ -117,28 +120,17 @@ class ReportController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'message', type: 'string', example: 'Report created successfully'),
-                        new OA\Property(property: 'report', ref: '#/components/schemas/Report'),
+                        new OA\Property(property: 'report', type: 'object'),
                     ]
                 )
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
             new OA\Response(
                 response: 422,
-                description: 'Validasi gagal',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
-                        new OA\Property(property: 'errors', type: 'object'),
-                    ]
-                )
+                description: 'Validasi gagal'
             ),
         ]
     )]
@@ -154,15 +146,19 @@ class ReportController extends Controller
         $validated['status'] = $validated['status'] ?? 'pending';
 
         $report = Report::create($validated);
+        $report->load('user', 'trash');
 
-        return response()->json(['message' => 'Report created successfully', 'report' => $report], 201);
+        return response()->json([
+            'message' => 'Report created successfully',
+            'data' => $this->simplifyReport($report),
+        ], 201);
     }
 
     #[OA\Put(
-        path: '/api/v1/reports/{id}',
-        summary: 'Perbarui laporan',
-        description: 'Memperbarui informasi laporan yang sudah ada',
-        tags: ['Reports'],
+        path: '/api/v2/reports/{id}',
+        summary: 'Perbarui laporan (ringkas)',
+        description: 'Memperbarui laporan dan mengembalikan status sederhana',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
@@ -195,21 +191,11 @@ class ReportController extends Controller
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
             new OA\Response(
                 response: 404,
-                description: 'Laporan tidak ditemukan',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Report not found'),
-                    ]
-                )
+                description: 'Laporan tidak ditemukan'
             ),
         ]
     )]
@@ -233,10 +219,10 @@ class ReportController extends Controller
     }
 
     #[OA\Put(
-        path: '/api/v1/reports/{id}/status',
-        summary: 'Perbarui status laporan',
-        description: 'Mengubah status laporan ke pending, in_progress, completed, atau rejected',
-        tags: ['Reports'],
+        path: '/api/v2/reports/{id}/status',
+        summary: 'Perbarui status laporan (ringkas)',
+        description: 'Mengubah status laporan tanpa mengembalikan data penuh',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
@@ -268,31 +254,15 @@ class ReportController extends Controller
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
             new OA\Response(
                 response: 404,
-                description: 'Laporan tidak ditemukan',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Report not found'),
-                    ]
-                )
+                description: 'Laporan tidak ditemukan'
             ),
             new OA\Response(
                 response: 422,
-                description: 'Validasi gagal - status tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
-                        new OA\Property(property: 'errors', type: 'object'),
-                    ]
-                )
+                description: 'Validasi gagal - status tidak valid'
             ),
         ]
     )]
@@ -314,10 +284,10 @@ class ReportController extends Controller
     }
 
     #[OA\Delete(
-        path: '/api/v1/reports/{id}',
-        summary: 'Hapus laporan',
-        description: 'Menghapus laporan dari sistem',
-        tags: ['Reports'],
+        path: '/api/v2/reports/{id}',
+        summary: 'Hapus laporan (ringkas)',
+        description: 'Menghapus laporan dari sistem dan mengembalikan pesan singkat',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
@@ -340,21 +310,11 @@ class ReportController extends Controller
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
             new OA\Response(
                 response: 404,
-                description: 'Laporan tidak ditemukan',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Report not found'),
-                    ]
-                )
+                description: 'Laporan tidak ditemukan'
             ),
         ]
     )]
@@ -372,10 +332,10 @@ class ReportController extends Controller
     }
 
     #[OA\Post(
-        path: '/api/v1/reports/search',
-        summary: 'Cari laporan',
-        description: 'Mencari laporan berdasarkan judul atau deskripsi',
-        tags: ['Reports'],
+        path: '/api/v2/reports/search',
+        summary: 'Cari laporan ringkas',
+        description: 'Mencari laporan dan mengembalikan hasil dalam format yang disederhanakan',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
@@ -392,22 +352,13 @@ class ReportController extends Controller
                 description: 'Hasil pencarian laporan',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(
-                            property: 'results',
-                            type: 'array',
-                            items: new OA\Items(ref: '#/components/schemas/Report')
-                        ),
+                        new OA\Property(property: 'results', type: 'array', items: new OA\Items),
                     ]
                 )
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
         ]
     )]
@@ -415,19 +366,21 @@ class ReportController extends Controller
     {
         $query = $request->input('query');
 
-        $reports = Report::with('user')
+        $reports = Report::with('user', 'trash')
             ->where('title', 'like', "%{$query}%")
             ->orWhere('description', 'like', "%{$query}%")
             ->get();
 
-        return response()->json(['results' => $reports]);
+        return response()->json([
+            'data' => $reports->map(fn (Report $report) => $this->simplifyReport($report)),
+        ]);
     }
 
     #[OA\Post(
-        path: '/api/v1/reports/filter',
-        summary: 'Filter laporan berdasarkan status',
-        description: 'Mengambil laporan yang difilter berdasarkan status tertentu',
-        tags: ['Reports'],
+        path: '/api/v2/reports/filter',
+        summary: 'Filter laporan berdasarkan status (ringkas)',
+        description: 'Mengambil laporan yang difilter dengan hasil ringkas',
+        tags: ['Reports V2'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
@@ -444,31 +397,17 @@ class ReportController extends Controller
                 description: 'Hasil filter laporan',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(
-                            property: 'reports',
-                            type: 'array',
-                            items: new OA\Items(ref: '#/components/schemas/Report')
-                        ),
+                        new OA\Property(property: 'reports', type: 'array', items: new OA\Items),
                     ]
                 )
             ),
             new OA\Response(
                 response: 400,
-                description: 'Status tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Invalid status value'),
-                    ]
-                )
+                description: 'Status tidak valid'
             ),
             new OA\Response(
                 response: 401,
-                description: 'Token tidak valid',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Unauthorized'),
-                    ]
-                )
+                description: 'Token tidak valid'
             ),
         ]
     )]
@@ -480,11 +419,45 @@ class ReportController extends Controller
             return response()->json(['message' => 'Invalid status value'], 400);
         }
 
-        $reports = Report::with('user')->where('status', $status)->get();
+        $reports = Report::with('user', 'trash')->where('status', $status)->get();
 
-        return response()->json(['reports' => $reports]);
+        return response()->json([
+            'data' => $reports->map(fn (Report $report) => $this->simplifyReport($report)),
+        ]);
     }
 
+    #[OA\Get(
+        path: '/api/v2/reports/paginated',
+        summary: 'Dapatkan laporan ringkas dengan pagination',
+        description: 'Mengambil laporan dengan pagination dalam format ringkas',
+        tags: ['Reports V2'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                description: 'Jumlah data per halaman (default: 10)',
+                schema: new OA\Schema(type: 'integer', example: 10)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Laporan berhasil diambil dengan pagination',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items),
+                        new OA\Property(property: 'pagination', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Token tidak valid'
+            ),
+        ]
+    )]
     public function indexPaginated(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -493,7 +466,7 @@ class ReportController extends Controller
             ->paginate($perPage);
 
         return response()->json([
-            'data' => $reports->items(),
+            'data' => collect($reports->items())->map(fn ($report) => $this->simplifyReport($report)),
             'pagination' => [
                 'total' => $reports->total(),
                 'per_page' => $reports->perPage(),
@@ -505,21 +478,55 @@ class ReportController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v2/reports/{id}/trash',
+        summary: 'Dapatkan daftar nama trash dari laporan',
+        description: 'Mengambil nama-nama trash yang terkait dengan laporan spesifik',
+        tags: ['Reports V2'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID laporan',
+                schema: new OA\Schema(type: 'integer', example: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Daftar nama trash dari laporan berhasil diambil',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'report_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'trash_names', type: 'array', items: new OA\Items(type: 'string')),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Token tidak valid'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Laporan tidak ditemukan'
+            ),
+        ]
+    )]
     public function trashPerReport($id)
     {
-        $report = Report::find($id);
+        $report = Report::with('trash')->find($id);
 
         if (! $report) {
             return response()->json(['message' => 'Report not found'], 404);
         }
 
-        $trash = $report->trash()
-            ->select('trashes.id as id', 'trashes.name', 'trashes.weight', 'trashes.weight_unit')
-            ->get();
-
         return response()->json([
-            'report_id' => $report->id,
-            'trash' => $trash,
+            'data' => [
+                'report_id' => $report->id,
+                'trash_names' => $report->trash->pluck('name')->all(),
+            ],
         ]);
     }
 }
