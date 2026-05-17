@@ -19,25 +19,25 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create admin user
-        $admin = User::firstOrCreate([
-            'email' => 'admin@example.com',
-        ], [
+        $admin = User::create([
             'name' => 'Admin Hebat',
+            'email' => 'admin@example.com',
             'password' => Hash::make('secret321'),
+            'role' => 'admin',
         ]);
 
-        // Create some random users
-        $users = User::factory(5)->create();
+        // Create 5 regular users with 'user' role
+        $users = User::factory(5)->create(['role' => 'user']);
 
-        // Add admin to users collection
+        // Combine admin and regular users
         $allUsers = collect([$admin])->merge($users);
 
         // Create trashes
         Trash::factory(20)->create();
 
-        // Create reports for users
+        // Create reports for users with trash relationships
         foreach ($allUsers as $user) {
-            Report::factory(rand(1, 5))->create([
+            Report::factory(rand(1, 5))->withTrash()->create([
                 'user_id' => $user->id,
             ]);
         }

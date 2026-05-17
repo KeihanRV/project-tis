@@ -18,11 +18,18 @@ class DummyJwtMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try {
-            // Memparsing token dan mendapatkan payload-nya
-            $payload = JWTAuth::parseToken()->getPayload();
+            // Memvalidasi JWT token dan mendapatkan user dari token
+            if (! $user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json([
+                    'message' => 'User not found',
+                ], 401);
+            }
 
-            // Menyisipkan payload ke dalam request agar bisa diakses di controller
-            $request->merge(['jwt_payload' => $payload]);
+            // Menyimpan user dan role ke request untuk diakses di controller/middleware lainnya
+            $request->merge([
+                'authenticated_user' => $user,
+                'user_role' => $user->role,
+            ]);
         } catch (JWTException $e) {
             return response()->json([
                 'message' => 'Token invalid or expired',

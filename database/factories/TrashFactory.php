@@ -21,6 +21,7 @@ class TrashFactory extends Factory
             'name' => $this->faker->word(),
             'category' => $this->faker->randomElement(['Anorganik', 'Organik', 'Berbahaya']),
             'weight' => $this->faker->randomFloat(2, 0.1, 100), // weight in kg
+            'weight_unit' => $this->faker->randomElement(['kg', 'g', 'ton']),
         ];
     }
 }

@@ -119,10 +119,17 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $user = auth('api')->user();
+
         return response()->json([
             'message' => 'Login successful',
             'token' => $token,
-            'user' => auth('api')->user(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
         ]);
     }
 
@@ -191,8 +198,15 @@ class AuthController extends Controller
     )]
     public function profile()
     {
+        $user = auth('api')->user();
+
         return response()->json([
-            'user' => auth('api')->user(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
         ]);
     }
 }

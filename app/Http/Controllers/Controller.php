@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Routing\Controller as BaseController;
 use OpenApi\Attributes as OA;
 
 #[OA\Info(
@@ -20,7 +21,7 @@ use OpenApi\Attributes as OA;
     bearerFormat: 'JWT',
     description: 'Gunakan token JWT pada header Authorization: Bearer {token}'
 )]
-abstract class Controller
+abstract class Controller extends BaseController
 {
     // Tambahkan method umum jika diperlukan
 }

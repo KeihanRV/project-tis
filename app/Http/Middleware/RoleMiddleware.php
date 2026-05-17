@@ -15,17 +15,14 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // Mengambil payload dari request (asumsi diatur oleh middleware JWT sebelumnya)
-        $payload = $request->jwt_payload ?? null;
+        // Mengambil role dari request yang disimpan oleh JWT middleware
+        $userRole = $request->user_role ?? null;
 
-        if (! $payload) {
+        if (! $userRole) {
             return response()->json([
-                'message' => 'Missing token payload',
+                'message' => 'Missing user role information',
             ], 401);
         }
-
-        // Mengambil role dari payload
-        $userRole = $payload->get('role');
 
         // Pengecekan apakah role user ada di dalam daftar role yang diizinkan
         if (! in_array($userRole, $roles)) {

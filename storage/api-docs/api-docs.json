@@ -12,11 +12,759 @@
         }
     ],
     "paths": {
+        "/api/v2/reports": {
+            "get": {
+                "tags": ["Reports V2"],
+                "summary": "Dapatkan daftar laporan ringkas",
+                "description": "Mengambil laporan dengan data yang disederhanakan untuk tampilan cepat",
+                "operationId": "b6888e93d8d07aa13b196eb5128c7bf7",
+                "responses": {
+                    "200": {
+                        "description": "Daftar laporan berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": ["Reports V2"],
+                "summary": "Buat laporan baru (ringkas)",
+                "description": "Membuat laporan baru dan mengembalikan ringkasan data laporan",
+                "operationId": "b313a885413bf398a71f84c9d497bca9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["title", "description"],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Sampah Menumpuk di Taman Kota"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Terdapat tumpukan sampah besar di sudut taman utara"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "pending",
+                                        "enum": [
+                                            "pending",
+                                            "in_progress",
+                                            "completed",
+                                            "rejected"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Laporan berhasil dibuat",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Report created successfully"
+                                        },
+                                        "report": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/reports/{id}": {
+            "get": {
+                "tags": ["Reports V2"],
+                "summary": "Dapatkan detail laporan ringkas",
+                "description": "Mengambil detail laporan dengan data yang disederhanakan",
+                "operationId": "e3a81bdd653b900ab4277eedb202b556",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID laporan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail laporan berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Report"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "404": {
+                        "description": "Laporan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": ["Reports V2"],
+                "summary": "Perbarui laporan (ringkas)",
+                "description": "Memperbarui laporan dan mengembalikan status sederhana",
+                "operationId": "827b0dea47579ccc7045e6bd0c727a82",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID laporan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Sampah Menumpuk di Taman Kota"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Terdapat tumpukan sampah besar"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "pending",
+                                        "enum": [
+                                            "pending",
+                                            "in_progress",
+                                            "completed",
+                                            "rejected"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Laporan berhasil diperbarui",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Report updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "404": {
+                        "description": "Laporan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": ["Reports V2"],
+                "summary": "Hapus laporan (ringkas)",
+                "description": "Menghapus laporan dari sistem dan mengembalikan pesan singkat",
+                "operationId": "e4c76f3d8cd0edec26d2d65a22e51856",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID laporan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Laporan berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Report deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "404": {
+                        "description": "Laporan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/reports/{id}/status": {
+            "put": {
+                "tags": ["Reports V2"],
+                "summary": "Perbarui status laporan (ringkas)",
+                "description": "Mengubah status laporan tanpa mengembalikan data penuh",
+                "operationId": "073b42c7972434dfa51c8cef7c3bfb7d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID laporan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["status"],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "completed",
+                                        "enum": [
+                                            "pending",
+                                            "in_progress",
+                                            "completed",
+                                            "rejected"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status laporan berhasil diperbarui",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Report status updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "404": {
+                        "description": "Laporan tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal - status tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/reports/search": {
+            "post": {
+                "tags": ["Reports V2"],
+                "summary": "Cari laporan ringkas",
+                "description": "Mencari laporan dan mengembalikan hasil dalam format yang disederhanakan",
+                "operationId": "cbb949f8039377e3b8b744fa7be47f8d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["query"],
+                                "properties": {
+                                    "query": {
+                                        "type": "string",
+                                        "example": "sampah"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Hasil pencarian laporan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "results": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/reports/filter": {
+            "post": {
+                "tags": ["Reports V2"],
+                "summary": "Filter laporan berdasarkan status (ringkas)",
+                "description": "Mengambil laporan yang difilter dengan hasil ringkas",
+                "operationId": "2b47bc189ed91f98bdc1d250e1cf69c7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["status"],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "pending",
+                                        "enum": [
+                                            "pending",
+                                            "in_progress",
+                                            "completed",
+                                            "rejected"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Hasil filter laporan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "reports": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Status tidak valid"
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/reports/paginated": {
+            "get": {
+                "tags": ["Reports V2"],
+                "summary": "Dapatkan laporan ringkas dengan pagination",
+                "description": "Mengambil laporan dengan pagination dalam format ringkas",
+                "operationId": "c63cfe4e753260f5dce1a357540567ff",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah data per halaman (default: 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Laporan berhasil diambil dengan pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "pagination": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/reports/{id}/trash": {
+            "get": {
+                "tags": ["Reports V2"],
+                "summary": "Dapatkan daftar nama trash dari laporan",
+                "description": "Mengambil nama-nama trash yang terkait dengan laporan spesifik",
+                "operationId": "e50a7abe4ded4ee09b18b99173280c2f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID laporan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar nama trash dari laporan berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "report_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "trash_names": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "404": {
+                        "description": "Laporan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/trash": {
+            "get": {
+                "tags": ["Trash V2"],
+                "summary": "Dapatkan daftar sampah ringkas",
+                "description": "Mengambil daftar sampah dengan informasi yang disederhanakan",
+                "operationId": "50517c0e1a1918b376f5b81c0e2a4995",
+                "responses": {
+                    "200": {
+                        "description": "Daftar sampah berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Botol Plastik"
+                                            },
+                                            "category": {
+                                                "type": "string",
+                                                "example": "Anorganik"
+                                            },
+                                            "weight": {
+                                                "type": "number",
+                                                "format": "float",
+                                                "example": 2.5
+                                            },
+                                            "weight_unit": {
+                                                "type": "string",
+                                                "example": "kg"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": ["Trash V2"],
+                "summary": "Buat data sampah ringkas",
+                "description": "Menambahkan data sampah dan mengembalikan format ringkas",
+                "operationId": "96a8a4594c5919f79f5ef7588ea3de13",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["name", "category", "weight"],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Botol Plastik"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "example": "Anorganik"
+                                    },
+                                    "weight": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Data sampah berhasil dibuat",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Botol Plastik"
+                                        },
+                                        "category": {
+                                            "type": "string",
+                                            "example": "Anorganik"
+                                        },
+                                        "weight": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 2.5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/trash/{id}": {
+            "get": {
+                "tags": ["Trash V2"],
+                "summary": "Dapatkan detail sampah ringkas",
+                "description": "Mengambil detail ringkas sampah berdasarkan ID",
+                "operationId": "430687759c3ed409e0ffc9693725f24b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID sampah",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail sampah berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Botol Plastik"
+                                        },
+                                        "category": {
+                                            "type": "string",
+                                            "example": "Anorganik"
+                                        },
+                                        "weight": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 2.5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak valid"
+                    },
+                    "404": {
+                        "description": "Sampah tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/register": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Daftar pengguna baru",
                 "description": "Membuat akun pengguna baru dengan email, nama, dan password",
                 "operationId": "8a56853624e025573120a09a4c75d468",
@@ -25,11 +773,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "password"
-                                ],
+                                "required": ["name", "email", "password"],
                                 "properties": {
                                     "name": {
                                         "type": "string",
@@ -95,9 +839,7 @@
         },
         "/api/login": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Login pengguna",
                 "description": "Melakukan autentikasi dengan email dan password untuk mendapatkan JWT token",
                 "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
@@ -106,10 +848,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "email",
-                                    "password"
-                                ],
+                                "required": ["email", "password"],
                                 "properties": {
                                     "email": {
                                         "type": "string",
@@ -172,9 +911,7 @@
         },
         "/api/v1/logout": {
             "post": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Logout pengguna",
                 "description": "Mengeluarkan pengguna dari sistem dan membatalkan token JWT",
                 "operationId": "c4eddaf1a2e990cc90e4326c0d731d41",
@@ -221,9 +958,7 @@
         },
         "/api/v1/profile": {
             "get": {
-                "tags": [
-                    "Auth"
-                ],
+                "tags": ["Auth"],
                 "summary": "Dapatkan profil pengguna",
                 "description": "Mengambil informasi profil pengguna yang sedang login",
                 "operationId": "e7fa93473c44547baf6183ba42322df2",
@@ -269,9 +1004,7 @@
         },
         "/api/v1/reports": {
             "get": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Dapatkan daftar laporan",
                 "description": "Mengambil seluruh laporan dengan informasi pengguna pembuat laporan",
                 "operationId": "39be92a203539a06cab4b60a9e17c8ee",
@@ -313,9 +1046,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Buat laporan baru",
                 "description": "Membuat laporan baru tentang insiden sampah",
                 "operationId": "903295602a2068d66c2aa925c300ee8c",
@@ -324,10 +1055,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "title",
-                                    "description"
-                                ],
+                                "required": ["title", "description"],
                                 "properties": {
                                     "title": {
                                         "type": "string",
@@ -418,9 +1146,7 @@
         },
         "/api/v1/reports/{id}": {
             "get": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Dapatkan detail laporan",
                 "description": "Mengambil detail laporan berdasarkan ID",
                 "operationId": "9cac993f2573ae3b33d46b92089f6caf",
@@ -487,9 +1213,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Perbarui laporan",
                 "description": "Memperbarui informasi laporan yang sudah ada",
                 "operationId": "1035fa1bff32aef485bc44ac30a27123",
@@ -592,9 +1316,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Hapus laporan",
                 "description": "Menghapus laporan dari sistem",
                 "operationId": "69be0fcabe9118975a087ff08941026e",
@@ -669,9 +1391,7 @@
         },
         "/api/v1/reports/{id}/status": {
             "put": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Perbarui status laporan",
                 "description": "Mengubah status laporan ke pending, in_progress, completed, atau rejected",
                 "operationId": "e8d0eb0e33519ffc284fe7b3e8e84095",
@@ -692,9 +1412,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "status"
-                                ],
+                                "required": ["status"],
                                 "properties": {
                                     "status": {
                                         "type": "string",
@@ -790,9 +1508,7 @@
         },
         "/api/v1/reports/search": {
             "post": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Cari laporan",
                 "description": "Mencari laporan berdasarkan judul atau deskripsi",
                 "operationId": "edca4ca2cd4b43476a0f9995426cfb6e",
@@ -801,9 +1517,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "query"
-                                ],
+                                "required": ["query"],
                                 "properties": {
                                     "query": {
                                         "type": "string",
@@ -860,9 +1574,7 @@
         },
         "/api/v1/reports/filter": {
             "post": {
-                "tags": [
-                    "Reports"
-                ],
+                "tags": ["Reports"],
                 "summary": "Filter laporan berdasarkan status",
                 "description": "Mengambil laporan yang difilter berdasarkan status tertentu",
                 "operationId": "d6687a770f7c644982178360bf63a8e2",
@@ -871,9 +1583,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "status"
-                                ],
+                                "required": ["status"],
                                 "properties": {
                                     "status": {
                                         "type": "string",
@@ -952,9 +1662,7 @@
         },
         "/api/v1/trash": {
             "get": {
-                "tags": [
-                    "Trash"
-                ],
+                "tags": ["Trash"],
                 "summary": "Dapatkan daftar sampah",
                 "description": "Mengambil seluruh data sampah yang telah dicatat",
                 "operationId": "ddffcb2862d79f04ef04e0b67d9d5f83",
@@ -996,9 +1704,7 @@
                 ]
             },
             "post": {
-                "tags": [
-                    "Trash"
-                ],
+                "tags": ["Trash"],
                 "summary": "Buat data sampah baru",
                 "description": "Menambahkan data sampah baru ke sistem",
                 "operationId": "92eb18bc79ced819b38dd9646abcb7fc",
@@ -1007,11 +1713,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "category",
-                                    "weight"
-                                ],
+                                "required": ["name", "category", "weight"],
                                 "properties": {
                                     "name": {
                                         "type": "string",
@@ -1088,9 +1790,7 @@
         },
         "/api/v1/trash/{id}": {
             "get": {
-                "tags": [
-                    "Trash"
-                ],
+                "tags": ["Trash"],
                 "summary": "Dapatkan detail sampah",
                 "description": "Mengambil detail sampah berdasarkan ID",
                 "operationId": "021caf20f7f3d390b20e05cf9c49a14c",
@@ -1157,9 +1857,7 @@
                 ]
             },
             "put": {
-                "tags": [
-                    "Trash"
-                ],
+                "tags": ["Trash"],
                 "summary": "Perbarui data sampah",
                 "description": "Memperbarui data sampah yang sudah ada",
                 "operationId": "79d159ca25bba3d35932c3336d6a04ae",
@@ -1251,9 +1949,7 @@
                 ]
             },
             "delete": {
-                "tags": [
-                    "Trash"
-                ],
+                "tags": ["Trash"],
                 "summary": "Hapus data sampah",
                 "description": "Menghapus data sampah dari sistem",
                 "operationId": "830932ecfc6d248e13e495432c7d0f52",
@@ -1473,6 +2169,14 @@
         }
     },
     "tags": [
+        {
+            "name": "Reports V2",
+            "description": "Reports V2"
+        },
+        {
+            "name": "Trash V2",
+            "description": "Trash V2"
+        },
         {
             "name": "Auth",
             "description": "Auth"
